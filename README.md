@@ -18,10 +18,10 @@ Instant MkDocs server for any directory. No configuration required.
 
 ```bash
 # Run directly without installation
-nix run github:USERNAME/mdserve
+nix run github:sat0sh-dev/mdserve
 
 # Or install to profile
-nix profile install github:USERNAME/mdserve
+nix profile install github:sat0sh-dev/mdserve
 ```
 
 ### Using Nix Flakes in your config
@@ -30,7 +30,7 @@ Add to your `flake.nix`:
 
 ```nix
 {
-  inputs.mdserve.url = "github:USERNAME/mdserve";
+  inputs.mdserve.url = "github:sat0sh-dev/mdserve";
 
   outputs = { self, nixpkgs, mdserve, ... }: {
     # Add to your packages
