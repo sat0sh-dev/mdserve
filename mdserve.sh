@@ -174,18 +174,32 @@ YAMLEOF
 
 # Background file watcher to sync changes
 (
-  if command -v inotifywait &>/dev/null; then
-    # Use inotifywait for efficient watching
-    while inotifywait -r -e modify,create,delete,move "$TARGET_DIR" \
-        --exclude '(\.git|\.repo|build|node_modules|__pycache__|\.sock|target|\.venv|venv)' 2>/dev/null; do
-      sync_docs
-    done
-  else
-    # Fallback: poll every 2 seconds
+  poll_fallback() {
+    echo "Using polling mode (every 2 seconds)..." >&2
     while true; do
       sleep 2
       sync_docs
     done
+  }
+
+  if command -v inotifywait &>/dev/null; then
+    # Test if inotifywait can set up watches successfully
+    if timeout 10 inotifywait -r -e modify "$TARGET_DIR" \
+        --exclude '(\.git|\.repo|build|node_modules|__pycache__|\.sock|target|\.venv|venv|downloads|sstate-cache)' \
+        -t 1 2>&1 | grep -q "upper limit"; then
+      echo "Warning: inotify watch limit reached, falling back to polling" >&2
+      poll_fallback
+    else
+      # Use inotifywait for efficient watching
+      while inotifywait -r -e modify,create,delete,move "$TARGET_DIR" \
+          --exclude '(\.git|\.repo|build|node_modules|__pycache__|\.sock|target|\.venv|venv|downloads|sstate-cache)' 2>/dev/null; do
+        sync_docs
+      done
+      # If inotifywait exits unexpectedly, fall back to polling
+      poll_fallback
+    fi
+  else
+    poll_fallback
   fi
 ) &
 
